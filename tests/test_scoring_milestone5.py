@@ -51,6 +51,14 @@ def test_recompute_access_scores_persists_components_and_explanations_idempotent
     assert score.transit_access_score is None
     assert score.vulnerability_score == 80
     assert score.civic_access_index == 63.75
+    assert score.explanation_json["score_version"] == "cai_v1"
+    assert score.explanation_json["component_scores"]["healthcare_access_score"] == {
+        "score": 50.0,
+        "weight": 0.35,
+        "status": "available",
+        "metric_count": 2,
+    }
+    assert "transit_access_score" in score.explanation_json["missing_components"]
     assert score.explanation_json["main_drivers"][0]["metric"] == "vulnerability_poverty_rate"
     assert any(
         "Transit score is unavailable" in item
@@ -74,6 +82,17 @@ def test_explanation_endpoint_uses_persisted_score_payload() -> None:
         civic_access_index=72,
         vulnerability_score=88,
         explanation_json={
+            "score_version": "cai_v1",
+            "methodology": "Weighted average of Massachusetts-relative gap percentiles.",
+            "component_scores": {
+                "vulnerability_score": {
+                    "score": 88,
+                    "weight": 0.2,
+                    "status": "available",
+                    "metric_count": 4,
+                }
+            },
+            "missing_components": ["transit_access_score"],
             "main_drivers": [
                 {
                     "metric": "vulnerability_poverty_rate",
@@ -94,6 +113,9 @@ def test_explanation_endpoint_uses_persisted_score_payload() -> None:
 
     assert response.status_code == 200
     assert response.json()["composite_score"] == 72
+    assert response.json()["score_version"] == "cai_v1"
+    assert response.json()["component_scores"]["vulnerability_score"]["score"] == 88
+    assert response.json()["missing_components"] == ["transit_access_score"]
     assert response.json()["main_drivers"][0]["metric"] == "vulnerability_poverty_rate"
     assert response.json()["limitations"] == ["OSM coverage varies."]
 

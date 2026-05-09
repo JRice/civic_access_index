@@ -11,6 +11,15 @@ from app.db.models.census_tract import CensusTract
 
 router = APIRouter()
 DB_DEPENDENCY = Depends(get_db)
+TRACT_SORT_COLUMNS = {
+    "geoid": CensusTract.geoid,
+    "civic_access_index": AccessScore.civic_access_index,
+    "composite_score": AccessScore.composite_score,
+    "vulnerability_score": AccessScore.vulnerability_score,
+    "healthcare_access_score": AccessScore.healthcare_access_score,
+    "food_access_score": AccessScore.food_access_score,
+    "transit_access_score": AccessScore.transit_access_score,
+}
 
 
 @router.get("/tracts", response_model=list[TractSummary])
@@ -24,12 +33,25 @@ def list_tracts(
     limit: int = Query(default=50, ge=1, le=500),
     db: Session = DB_DEPENDENCY,
 ) -> list[TractSummary]:
-    query = db.query(CensusTract)
+    query = db.query(CensusTract).outerjoin(
+        AccessScore,
+        AccessScore.census_tract_id == CensusTract.id,
+    )
     if state:
         query = query.filter(CensusTract.state_fips == state)
     if county:
         query = query.filter(CensusTract.county_fips == county)
-    tracts = query.order_by(CensusTract.geoid.asc()).limit(limit).all()
+    if min_score is not None:
+        query = query.filter(AccessScore.civic_access_index >= min_score)
+    if max_score is not None:
+        query = query.filter(AccessScore.civic_access_index <= max_score)
+    sort_desc = sort.startswith("-")
+    sort_name = sort[1:] if sort_desc else sort
+    sort_column = TRACT_SORT_COLUMNS.get(sort_name)
+    if sort_column is None:
+        raise HTTPException(status_code=400, detail=f"Unsupported tract sort: {sort}")
+    order_expr = sort_column.desc().nullslast() if sort_desc else sort_column.asc().nullslast()
+    tracts = query.order_by(order_expr, CensusTract.geoid.asc()).limit(limit).all()
     return [_tract_summary(tract) for tract in tracts]
 
 

@@ -105,6 +105,13 @@ class ScoreDistributionBucket(BaseModel):
     count: int
 
 
+class ScoreComponent(BaseModel):
+    score: float | None = None
+    weight: float
+    status: str
+    metric_count: int = 0
+
+
 class ScoreDriver(BaseModel):
     metric: str
     value: float | int | str | None
@@ -115,5 +122,9 @@ class ScoreDriver(BaseModel):
 class ScoreExplanation(BaseModel):
     tract_geoid: str
     composite_score: float
+    score_version: str = "cai_v1"
+    methodology: str | None = None
+    component_scores: dict[str, ScoreComponent] = Field(default_factory=dict)
+    missing_components: list[str] = Field(default_factory=list)
     main_drivers: list[ScoreDriver] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)

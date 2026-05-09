@@ -149,7 +149,7 @@ Useful URLs:
 [x] **Milestone 3**: OSM amenities and CMS provider ingestion.
 [x] **Milestone 4**: tract-level metrics, distance calculations, and vulnerability
   percentiles.
-[ ] **Milestone 5**: Civic Access Index scoring with explanation objects and limitations.
+[x] **Milestone 5**: Civic Access Index scoring with explanation objects and limitations.
 [ ] **Milestone 6**: map dashboard, tract side panel, and data operations page.
 [ ] **Milestone 7**: OpenSearch indexing, Terraform-managed AWS deployment, and CI/CD.
 

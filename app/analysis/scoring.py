@@ -13,6 +13,11 @@ SCORE_WEIGHTS = {
     "transit_gap_score": 0.20,
     "socioeconomic_vulnerability_score": 0.20,
 }
+SCORE_VERSION = "cai_v1"
+SCORE_METHODOLOGY = (
+    "Weighted average of Massachusetts-relative gap percentiles; weights are renormalized "
+    "across available components when a source category is not available."
+)
 
 HEALTHCARE_SCORE_METRICS = (
     "nearest_healthcare_amenity_distance_m",
@@ -42,6 +47,12 @@ SCORE_COMPONENT_METRICS = {
     "food_access_score": FOOD_SCORE_METRICS,
     "transit_access_score": TRANSIT_SCORE_METRICS,
     "vulnerability_score": VULNERABILITY_SCORE_METRICS,
+}
+SCORE_COMPONENT_WEIGHTS = {
+    "healthcare_access_score": SCORE_WEIGHTS["healthcare_gap_score"],
+    "food_access_score": SCORE_WEIGHTS["food_gap_score"],
+    "transit_access_score": SCORE_WEIGHTS["transit_gap_score"],
+    "vulnerability_score": SCORE_WEIGHTS["socioeconomic_vulnerability_score"],
 }
 
 
@@ -120,6 +131,10 @@ def recompute_access_scores(db: Session) -> dict[str, Any]:
                 "transit_access_score": transit_score,
                 "vulnerability_score": vulnerability_score,
             },
+            component_metric_counts={
+                component_name: _available_metric_count(tract_metrics, metric_names)
+                for component_name, metric_names in SCORE_COMPONENT_METRICS.items()
+            },
         )
         access_score.computed_at = datetime.now(UTC)
         db.add(access_score)
@@ -130,6 +145,8 @@ def recompute_access_scores(db: Session) -> dict[str, Any]:
         "scores_written": scores_written,
         "scores_skipped": scores_skipped,
         "score_components": SCORE_COMPONENT_METRICS,
+        "score_weights": SCORE_COMPONENT_WEIGHTS,
+        "score_version": SCORE_VERSION,
     }
 
 
@@ -139,7 +156,23 @@ def build_score_explanation_payload(
     metrics: list[AccessMetric],
     composite_score: float | None,
     component_scores: dict[str, float | None],
+    component_metric_counts: dict[str, int] | None = None,
 ) -> dict[str, Any]:
+    component_metric_counts = component_metric_counts or {}
+    component_payload = {
+        component_name: {
+            "score": score,
+            "weight": SCORE_COMPONENT_WEIGHTS[component_name],
+            "status": "available" if score is not None else "not_available",
+            "metric_count": component_metric_counts.get(component_name, 0),
+        }
+        for component_name, score in component_scores.items()
+    }
+    missing_components = [
+        component_name
+        for component_name, component in component_payload.items()
+        if component["status"] != "available"
+    ]
     drivers = [
         {
             "metric": metric.metric_name,
@@ -157,9 +190,12 @@ def build_score_explanation_payload(
     return {
         "tract_geoid": tract.geoid,
         "composite_score": composite_score,
-        "component_scores": component_scores,
+        "score_version": SCORE_VERSION,
+        "methodology": SCORE_METHODOLOGY,
+        "component_scores": component_payload,
+        "missing_components": missing_components,
         "main_drivers": drivers,
-        "limitations": _limitations(component_scores),
+        "limitations": _limitations(component_scores, missing_components),
     }
 
 
@@ -177,6 +213,18 @@ def _component_score(
 ) -> float | None:
     return mean_available_percentile(
         [tract_metrics[metric_name] for metric_name in metric_names if metric_name in tract_metrics]
+    )
+
+
+def _available_metric_count(
+    tract_metrics: dict[str, AccessMetric],
+    metric_names: tuple[str, ...],
+) -> int:
+    return sum(
+        1
+        for metric_name in metric_names
+        if metric_name in tract_metrics
+        and tract_metrics[metric_name].percentile_statewide is not None
     )
 
 
@@ -216,7 +264,10 @@ def _driver_interpretation(metric: AccessMetric) -> str:
     return "Higher percentile indicates higher relative vulnerability or access gap."
 
 
-def _limitations(component_scores: dict[str, float | None]) -> list[str]:
+def _limitations(
+    component_scores: dict[str, float | None],
+    missing_components: list[str] | None = None,
+) -> list[str]:
     limitations = [
         "Amenity data may be incomplete where OpenStreetMap coverage is sparse.",
         "Distance calculations do not yet account for travel time or route networks.",
@@ -224,4 +275,8 @@ def _limitations(component_scores: dict[str, float | None]) -> list[str]:
     ]
     if component_scores.get("transit_access_score") is None:
         limitations.append("Transit score is unavailable until mapped transit stop data is loaded.")
+    if missing_components:
+        limitations.append(
+            "Composite score weights were renormalized across available components."
+        )
     return limitations
