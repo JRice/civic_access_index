@@ -249,10 +249,18 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["ingestion_run_id"], ["ingestion_runs.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_data_quality_issues_ingestion_run_id", "data_quality_issues", ["ingestion_run_id"])
+    op.create_index(
+        "ix_data_quality_issues_ingestion_run_id",
+        "data_quality_issues",
+        ["ingestion_run_id"],
+    )
     op.create_index("ix_data_quality_issues_issue_type", "data_quality_issues", ["issue_type"])
     op.create_index("ix_data_quality_issues_severity", "data_quality_issues", ["severity"])
-    op.create_index("ix_data_quality_issues_source_record_id", "data_quality_issues", ["source_record_id"])
+    op.create_index(
+        "ix_data_quality_issues_source_record_id",
+        "data_quality_issues",
+        ["source_record_id"],
+    )
 
 
 def downgrade() -> None:
@@ -292,4 +300,3 @@ def downgrade() -> None:
     op.drop_table("census_tracts")
     op.drop_index("ix_data_sources_name", table_name="data_sources")
     op.drop_table("data_sources")
-

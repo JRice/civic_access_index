@@ -1,6 +1,5 @@
 from app.api.schemas import ScoreDriver, ScoreExplanation
 
-
 DEFAULT_LIMITATIONS = [
     "Amenity data may be incomplete where OpenStreetMap coverage is sparse.",
     "Distance calculations do not yet account for travel time or route networks.",

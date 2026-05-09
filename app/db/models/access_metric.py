@@ -18,7 +18,9 @@ class AccessMetric(UUIDPrimaryKeyMixin, Base):
     percentile_statewide: Mapped[float | None] = mapped_column(Float)
     percentile_county: Mapped[float | None] = mapped_column(Float)
     source_run_ids: Mapped[list[str] | None] = mapped_column(ARRAY(String))
-    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    computed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+    )
 
     census_tract = relationship("CensusTract", back_populates="metrics")
-

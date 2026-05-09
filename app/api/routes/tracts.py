@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 
-from app.api.schemas import ScoreExplanation, TractSummary
 from app.analysis.explanations import build_placeholder_explanation
+from app.api.schemas import ScoreExplanation, TractSummary
 
 router = APIRouter()
 
@@ -40,5 +40,9 @@ def get_nearby_amenities(
     category: str | None = None,
     radius_meters: int = Query(default=1609, ge=100, le=50000),
 ) -> dict[str, object]:
-    return {"tract_geoid": geoid, "category": category, "radius_meters": radius_meters, "amenities": []}
-
+    return {
+        "tract_geoid": geoid,
+        "category": category,
+        "radius_meters": radius_meters,
+        "amenities": [],
+    }

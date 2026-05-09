@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import require_admin_token
-from app.workers.tasks.ingest import run_source_ingestion
 from app.workers.tasks.index import reindex_search
+from app.workers.tasks.ingest import run_source_ingestion
 from app.workers.tasks.score import recompute_scores
 
 router = APIRouter(dependencies=[Depends(require_admin_token)])

@@ -18,5 +18,8 @@ def readyz() -> dict[str, str]:
 @router.get("/version")
 def version() -> dict[str, str]:
     settings = get_settings()
-    return {"name": settings.app_name, "version": settings.app_version, "environment": settings.app_env}
-
+    return {
+        "name": settings.app_name,
+        "version": settings.app_version,
+        "environment": settings.app_env,
+    }

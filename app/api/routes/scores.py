@@ -10,7 +10,13 @@ def top_scores(
     county: str | None = None,
     limit: int = Query(default=25, ge=1, le=100),
 ) -> dict[str, object]:
-    return {"score_type": score_type, "state": state, "county": county, "limit": limit, "results": []}
+    return {
+        "score_type": score_type,
+        "state": state,
+        "county": county,
+        "limit": limit,
+        "results": [],
+    }
 
 
 @router.get("/scores/distribution")
@@ -20,4 +26,3 @@ def score_distribution(
     county: str | None = None,
 ) -> dict[str, object]:
     return {"score_type": score_type, "state": state, "county": county, "buckets": []}
-
