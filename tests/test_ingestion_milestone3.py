@@ -192,8 +192,33 @@ def test_amenity_and_provider_api_filtering(monkeypatch) -> None:
     assert amenities_response.json()["results"][0]["longitude"] == -71.06
     assert providers_response.status_code == 200
     assert providers_response.json()["results"][0]["phone"] == "(617) 726-2000"
+    assert providers_response.json()["results"][0]["is_mappable"] is False
+    assert providers_response.json()["results"][0]["mapping_status"] == "not_mappable"
     assert db.queries[0].filter_count >= 2
     assert db.queries[1].filter_count >= 2
+
+
+def test_provider_api_treats_bbox_as_mappable_only(monkeypatch) -> None:
+    provider = Provider(
+        id=str(uuid4()),
+        source_record_id="cms:hospital:220001",
+        name="Address Only Hospital",
+        provider_type="Acute Care Hospitals",
+        city="Boston",
+        state="MA",
+        raw_payload_json={"phone": "(617) 726-2000", "county": "SUFFOLK"},
+    )
+    db = _FakeApiSession(amenity_rows=[], provider_rows=[(provider, None, None)])
+
+    app = create_app()
+    app.dependency_overrides[get_db] = lambda: db
+    client = TestClient(app)
+
+    response = client.get("/api/providers?bbox=-72,41,-70,43")
+
+    assert response.status_code == 200
+    assert response.json()["bbox"] == "-72,41,-70,43"
+    assert db.queries[0].saw_location_not_null_filter is True
 
 
 class _FakeUpsertSession:
@@ -273,9 +298,12 @@ class _FakeApiQuery:
     def __init__(self, rows: list) -> None:
         self.rows = rows
         self.filter_count = 0
+        self.saw_location_not_null_filter = False
 
     def filter(self, *_args):
         self.filter_count += 1
+        if any("location IS NOT NULL" in str(arg) for arg in _args):
+            self.saw_location_not_null_filter = True
         return self
 
     def order_by(self, *_args):

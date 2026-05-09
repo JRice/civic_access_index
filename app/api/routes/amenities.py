@@ -76,6 +76,7 @@ def list_providers(
     radius_meters: int = Query(default=1609, ge=100, le=50000),
     bbox: str | None = None,
     q: str | None = None,
+    mappable_only: bool = False,
     limit: int = Query(default=100, ge=1, le=1000),
     offset: int = Query(default=0, ge=0),
     db: Session = DB_DEPENDENCY,
@@ -95,9 +96,12 @@ def list_providers(
         query = query.filter(Provider.city.ilike(f"%{city}%"))
     if q:
         query = query.filter(Provider.name.ilike(f"%{q}%"))
+    if mappable_only:
+        query = query.filter(Provider.location.is_not(None))
     if bbox:
         minx, miny, maxx, maxy = _parse_bbox(bbox)
         query = query.filter(
+            Provider.location.is_not(None),
             func.ST_Intersects(
                 Provider.location,
                 func.ST_MakeEnvelope(minx, miny, maxx, maxy, 4326),
@@ -112,6 +116,7 @@ def list_providers(
         "city": city,
         "bbox": bbox,
         "q": q,
+        "mappable_only": mappable_only,
         "limit": limit,
         "offset": offset,
         "results": [
@@ -155,6 +160,7 @@ def _provider_read(
     latitude: float | None,
 ) -> ProviderRead:
     raw_payload = provider.raw_payload_json or {}
+    is_mappable = longitude is not None and latitude is not None
     return ProviderRead(
         id=provider.id,
         source_record_id=provider.source_record_id,
@@ -169,4 +175,6 @@ def _provider_read(
         accepts_medicare=provider.accepts_medicare,
         longitude=longitude,
         latitude=latitude,
+        is_mappable=is_mappable,
+        mapping_status="mappable" if is_mappable else "not_mappable",
     )

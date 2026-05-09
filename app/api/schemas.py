@@ -61,6 +61,8 @@ class ProviderRead(BaseModel):
     accepts_medicare: bool | None = None
     longitude: float | None = None
     latitude: float | None = None
+    is_mappable: bool = False
+    mapping_status: str = "not_mappable"
 
 
 class TractSummary(BaseModel):
@@ -71,6 +73,36 @@ class TractSummary(BaseModel):
     population: int | None = None
     civic_access_index: float | None = None
     vulnerability_score: float | None = None
+
+
+class TractMetricRead(BaseModel):
+    metric_name: str
+    metric_value: float | None = None
+    metric_unit: str | None = None
+    percentile_statewide: float | None = None
+    percentile_county: float | None = None
+    status: str = "available"
+    caveat: str | None = None
+
+
+class ScoreTopResult(BaseModel):
+    geoid: str
+    tract_name: str | None = None
+    county_fips: str
+    metric_name: str
+    metric_value: float | None = None
+    metric_unit: str | None = None
+    percentile_statewide: float | None = None
+    healthcare_access_score: float | None = None
+    food_access_score: float | None = None
+    transit_access_score: float | None = None
+    vulnerability_score: float | None = None
+
+
+class ScoreDistributionBucket(BaseModel):
+    bucket_min: float
+    bucket_max: float
+    count: int
 
 
 class ScoreDriver(BaseModel):

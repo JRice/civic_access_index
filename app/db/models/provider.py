@@ -21,6 +21,7 @@ class Provider(UUIDPrimaryKeyMixin, Base):
     city: Mapped[str | None] = mapped_column(String(120))
     state: Mapped[str | None] = mapped_column(String(2), index=True)
     postal_code: Mapped[str | None] = mapped_column(String(20))
+    # Nullable by design: some official provider sources have addresses but no coordinates.
     location = mapped_column(Geometry(geometry_type="POINT", srid=4326, spatial_index=True))
     cms_rating: Mapped[float | None] = mapped_column(Float)
     accepts_medicare: Mapped[bool | None] = mapped_column(Boolean)

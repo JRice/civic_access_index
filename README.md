@@ -93,6 +93,18 @@ CMS Hospital General Information includes clean address fields but no coordinate
 so this implementation persists provider rows with `location = null` rather than
 using a paid geocoding API or inventing coordinates.
 
+Milestone 4 computes tract-level metric ingredients and Massachusetts-relative
+percentiles. Run it after Census and amenity ingestion:
+
+```powershell
+curl.exe -X POST "http://localhost:8000/api/admin/recompute-scores" `
+  -H "X-Admin-Token: your'token.with.dots"
+```
+
+The same recompute task also rolls metric percentiles into healthcare, food,
+transit, and socioeconomic vulnerability subscores, persists `access_scores`, and
+stores explanation drivers for `/api/tracts/{geoid}/explanation`.
+
 You can check Celery task status by taking the task_id you were handed and
 passing that to, e.g.:
 
@@ -114,6 +126,11 @@ Lightweight data queries:
 ```powershell
 curl.exe "http://localhost:8000/api/amenities?category=healthcare&city=Boston&limit=25"
 curl.exe "http://localhost:8000/api/providers?state=MA&provider_type=Acute&limit=25"
+curl.exe "http://localhost:8000/api/tracts/25001010100/metrics"
+curl.exe "http://localhost:8000/api/tracts/25001010100/explanation"
+curl.exe "http://localhost:8000/api/scores/top?score_type=civic_access_index&limit=10"
+curl.exe "http://localhost:8000/api/scores/top?score_type=vulnerability_poverty_rate&limit=10"
+curl.exe "http://localhost:8000/api/scores/distribution?score_type=nearest_food_access_distance_m"
 ```
 
 Useful URLs:
@@ -126,15 +143,15 @@ Useful URLs:
 
 ## First Milestones
 
-- **Milestone 1**: FastAPI app, PostGIS database, Alembic migrations, Celery worker,
+[x] **Milestone 1**: FastAPI app, PostGIS database, Alembic migrations, Celery worker,
   Redis, structured logs, health endpoints, and ingestion-run tables.
-- **Milestone 2**: Massachusetts census tract geometries and ACS vulnerability fields.
-- **Milestone 3**: OSM amenities and CMS provider ingestion.
-- **Milestone 4**: tract-level metrics, distance calculations, and vulnerability
+[x] **Milestone 2**: Massachusetts census tract geometries and ACS vulnerability fields.
+[x] **Milestone 3**: OSM amenities and CMS provider ingestion.
+[x] **Milestone 4**: tract-level metrics, distance calculations, and vulnerability
   percentiles.
-- **Milestone 5**: Civic Access Index scoring with explanation objects and limitations.
-- **Milestone 6**: map dashboard, tract side panel, and data operations page.
-- **Milestone 7**: OpenSearch indexing, Terraform-managed AWS deployment, and CI/CD.
+[ ] **Milestone 5**: Civic Access Index scoring with explanation objects and limitations.
+[ ] **Milestone 6**: map dashboard, tract side panel, and data operations page.
+[ ] **Milestone 7**: OpenSearch indexing, Terraform-managed AWS deployment, and CI/CD.
 
 ## Scoring V1
 
