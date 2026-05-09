@@ -71,7 +71,7 @@ def run_source_ingestion(source_name: str) -> dict:
                 "metadata": result.metadata,
             }
         except HTTPError as exc:
-            error_summary = f"Upstream Census request failed: {exc}"
+            error_summary = f"Upstream source request failed for {source_name}: {exc}"
             with SessionLocal() as db:
                 failed_run = db.get(IngestionRun, run_id)
                 if failed_run is not None:

@@ -39,6 +39,48 @@ Check the returned Celery task id:
 docker compose exec -T worker python -c "from celery.result import AsyncResult; from app.workers.celery_app import celery_app; r=AsyncResult('TASK_ID', app=celery_app); print({'state': r.state, 'ready': r.ready(), 'result': r.result if r.ready() else None})"
 ```
 
+## Amenity and Provider Ingestion
+
+Trigger Massachusetts OpenStreetMap amenity ingestion:
+
+```bash
+curl -X POST "http://localhost:8000/api/admin/ingest/osm_overpass" \
+  -H "X-Admin-Token: $ADMIN_TOKEN"
+```
+
+PowerShell:
+
+```powershell
+curl.exe -X POST "http://localhost:8000/api/admin/ingest/osm_overpass" `
+  -H "X-Admin-Token: your'token.with.dots"
+```
+
+Trigger Massachusetts CMS hospital provider ingestion:
+
+```bash
+curl -X POST "http://localhost:8000/api/admin/ingest/cms_providers" \
+  -H "X-Admin-Token: $ADMIN_TOKEN"
+```
+
+PowerShell:
+
+```powershell
+curl.exe -X POST "http://localhost:8000/api/admin/ingest/cms_providers" `
+  -H "X-Admin-Token: your'token.with.dots"
+```
+
+Inspect data:
+
+```powershell
+curl.exe "http://localhost:8000/api/amenities?category=healthcare&city=Boston&limit=25"
+curl.exe "http://localhost:8000/api/providers?state=MA&provider_type=Acute&limit=25"
+curl.exe "http://localhost:8000/api/ingestion-runs?limit=10"
+```
+
+OSM uses the public Overpass API, which can rate limit or temporarily reject large
+queries. CMS hospital provider rows are address-only because the official dataset
+does not include coordinates; provider geometry is left null.
+
 The API and worker need `DATABASE_URL`, `CELERY_BROKER_URL`,
 `CELERY_RESULT_BACKEND`, `RAW_SNAPSHOT_ROOT`, and `ADMIN_TOKEN`. The local
 `.env.example` provides development defaults; do not commit real secrets.

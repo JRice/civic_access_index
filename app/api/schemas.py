@@ -33,6 +33,36 @@ class IngestionRunRead(BaseModel):
     raw_snapshot_uri: str | None = None
 
 
+class AmenityRead(BaseModel):
+    id: UUID
+    source_record_id: str | None = None
+    name: str | None = None
+    category: str
+    normalized_category: str | None = None
+    address: str | None = None
+    city: str | None = None
+    state: str | None = None
+    postal_code: str | None = None
+    longitude: float | None = None
+    latitude: float | None = None
+
+
+class ProviderRead(BaseModel):
+    id: UUID
+    source_record_id: str | None = None
+    name: str | None = None
+    provider_type: str
+    address: str | None = None
+    city: str | None = None
+    state: str | None = None
+    postal_code: str | None = None
+    phone: str | None = None
+    cms_rating: float | None = None
+    accepts_medicare: bool | None = None
+    longitude: float | None = None
+    latitude: float | None = None
+
+
 class TractSummary(BaseModel):
     geoid: str
     name: str | None = None
@@ -55,4 +85,3 @@ class ScoreExplanation(BaseModel):
     composite_score: float
     main_drivers: list[ScoreDriver] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
-

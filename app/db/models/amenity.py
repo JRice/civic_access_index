@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from geoalchemy2 import Geometry
-from sqlalchemy import DateTime, Float, ForeignKey, String, Text
+from sqlalchemy import DateTime, Float, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -11,6 +11,9 @@ from app.db.models.mixins import UUIDPrimaryKeyMixin
 
 class Amenity(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "amenities"
+    __table_args__ = (
+        UniqueConstraint("source_id", "source_record_id", name="uq_amenities_source_record"),
+    )
 
     source_id: Mapped[str | None] = mapped_column(ForeignKey("data_sources.id"), index=True)
     source_record_id: Mapped[str | None] = mapped_column(String(200), index=True)
@@ -25,4 +28,3 @@ class Amenity(UUIDPrimaryKeyMixin, Base):
     raw_payload_json: Mapped[dict | None] = mapped_column(JSONB)
     confidence_score: Mapped[float | None] = mapped_column(Float)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-

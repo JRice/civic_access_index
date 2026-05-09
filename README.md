@@ -79,6 +79,20 @@ curl.exe -X POST "http://localhost:8000/api/admin/ingest/census_acs" `
   -H "X-Admin-Token: your'token.with.dots"
 ```
 
+Milestone 3 adds Massachusetts OSM amenities and CMS hospital providers:
+
+```powershell
+curl.exe -X POST "http://localhost:8000/api/admin/ingest/osm_overpass" `
+  -H "X-Admin-Token: your'token.with.dots"
+
+curl.exe -X POST "http://localhost:8000/api/admin/ingest/cms_providers" `
+  -H "X-Admin-Token: your'token.with.dots"
+```
+
+CMS Hospital General Information includes clean address fields but no coordinates,
+so this implementation persists provider rows with `location = null` rather than
+using a paid geocoding API or inventing coordinates.
+
 You can check Celery task status by taking the task_id you were handed and
 passing that to, e.g.:
 
@@ -93,6 +107,13 @@ Inspect persisted ingestion history and source metadata through the public API:
 curl.exe "http://localhost:8000/api/data-sources"
 curl.exe "http://localhost:8000/api/ingestion-runs"
 curl.exe "http://localhost:8000/api/ingestion-runs/{run_id}"
+```
+
+Lightweight data queries:
+
+```powershell
+curl.exe "http://localhost:8000/api/amenities?category=healthcare&city=Boston&limit=25"
+curl.exe "http://localhost:8000/api/providers?state=MA&provider_type=Acute&limit=25"
 ```
 
 Useful URLs:

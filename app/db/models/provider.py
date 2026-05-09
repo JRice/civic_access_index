@@ -1,5 +1,5 @@
 from geoalchemy2 import Geometry
-from sqlalchemy import Boolean, Float, ForeignKey, String, Text
+from sqlalchemy import Boolean, Float, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -9,6 +9,9 @@ from app.db.models.mixins import UUIDPrimaryKeyMixin
 
 class Provider(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "providers"
+    __table_args__ = (
+        UniqueConstraint("source_id", "source_record_id", name="uq_providers_source_record"),
+    )
 
     source_id: Mapped[str | None] = mapped_column(ForeignKey("data_sources.id"), index=True)
     source_record_id: Mapped[str | None] = mapped_column(String(200), index=True)
@@ -22,4 +25,3 @@ class Provider(UUIDPrimaryKeyMixin, Base):
     cms_rating: Mapped[float | None] = mapped_column(Float)
     accepts_medicare: Mapped[bool | None] = mapped_column(Boolean)
     raw_payload_json: Mapped[dict | None] = mapped_column(JSONB)
-
