@@ -38,7 +38,9 @@ flowchart TD
 
 ## Local Development
 
-Copy environment defaults if you want local overrides:
+Copy environment defaults before starting the stack. The local `.env` file is
+ignored by git and holds development secrets such as the OpenSearch bootstrap
+password.
 
 ```powershell
 Copy-Item .env.example .env
@@ -48,6 +50,30 @@ Start the full local stack:
 
 ```powershell
 docker compose up --build
+```
+
+Admin endpoints require the `ADMIN_TOKEN` from `.env` in an `X-Admin-Token`
+header. In PowerShell, use `curl.exe` and double-quote the header; this works
+for tokens containing an apostrophe or dots:
+
+```powershell
+curl.exe -X POST "http://localhost:8000/api/admin/ingest/census_acs" `
+  -H "X-Admin-Token: your'token.with.dots"
+```
+
+If you edit `.env` after the stack is already running, recreate the API
+container before retrying:
+
+```powershell
+docker compose up -d --force-recreate api
+```
+
+You can then check the status of the job by taking the task_id you were handed
+and passing that to, e.g.:
+
+```powershell
+$TASK_ID = "3b68d46f-a5ce-4c5e-84af-5a6461042ed8"
+docker compose exec -T worker python -c "from celery.result import AsyncResult; from app.workers.celery_app import celery_app; r=AsyncResult('$TASK_ID', app=celery_app); print({'state': r.state, 'ready': r.ready(), 'result': r.result if r.ready() else None})"
 ```
 
 Useful URLs:
@@ -104,4 +130,3 @@ Initial endpoint groups:
 Civic Access Index is not policy advice and is not a definitive equity model. It is a
 data-integration and analysis platform that demonstrates how heterogeneous civic
 datasets can be operationalized into inspectable geospatial metrics.
-
