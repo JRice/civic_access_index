@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, String
+from sqlalchemy import DateTime, Float, ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -10,6 +10,9 @@ from app.db.models.mixins import UUIDPrimaryKeyMixin
 
 class AccessMetric(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "access_metrics"
+    __table_args__ = (
+        UniqueConstraint("census_tract_id", "metric_name", name="uq_access_metrics_tract_metric"),
+    )
 
     census_tract_id: Mapped[str] = mapped_column(ForeignKey("census_tracts.id"), index=True)
     metric_name: Mapped[str] = mapped_column(String(120), index=True)

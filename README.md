@@ -68,12 +68,31 @@ container before retrying:
 docker compose up -d --force-recreate api
 ```
 
-You can then check the status of the job by taking the task_id you were handed
-and passing that to, e.g.:
+Milestone 2 includes two working Massachusetts Census sources. Run TIGER first so
+ACS rows can attach to existing tracts, then run ACS:
+
+```powershell
+curl.exe -X POST "http://localhost:8000/api/admin/ingest/census_tiger" `
+  -H "X-Admin-Token: your'token.with.dots"
+
+curl.exe -X POST "http://localhost:8000/api/admin/ingest/census_acs" `
+  -H "X-Admin-Token: your'token.with.dots"
+```
+
+You can check Celery task status by taking the task_id you were handed and
+passing that to, e.g.:
 
 ```powershell
 $TASK_ID = "3b68d46f-a5ce-4c5e-84af-5a6461042ed8"
 docker compose exec -T worker python -c "from celery.result import AsyncResult; from app.workers.celery_app import celery_app; r=AsyncResult('$TASK_ID', app=celery_app); print({'state': r.state, 'ready': r.ready(), 'result': r.result if r.ready() else None})"
+```
+
+Inspect persisted ingestion history and source metadata through the public API:
+
+```powershell
+curl.exe "http://localhost:8000/api/data-sources"
+curl.exe "http://localhost:8000/api/ingestion-runs"
+curl.exe "http://localhost:8000/api/ingestion-runs/{run_id}"
 ```
 
 Useful URLs:
