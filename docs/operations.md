@@ -77,6 +77,17 @@ curl.exe "http://localhost:8000/api/providers?state=MA&provider_type=Acute&limit
 curl.exe "http://localhost:8000/api/ingestion-runs?limit=10"
 ```
 
+Dashboard:
+
+```powershell
+docker compose up -d frontend
+start http://localhost:5173
+```
+
+The dashboard uses React 19, TypeScript, Vite, TanStack Query, and MapLibre GL JS.
+It renders Massachusetts tract GeoJSON from `/api/tracts.geojson`, score layers,
+tract explanations, metric snapshots, and ingestion/source status.
+
 OSM uses the public Overpass API, which can rate limit or temporarily reject large
 queries. CMS hospital provider rows are address-only because the official dataset
 does not include coordinates; provider geometry is left null.

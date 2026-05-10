@@ -120,6 +120,35 @@ def test_tract_metrics_endpoint_returns_available_and_not_available_metrics() ->
     assert missing["nearest_transit_stop_distance_m"]["caveat"].startswith("Transit stop data")
 
 
+def test_tract_geojson_endpoint_returns_feature_collection() -> None:
+    tract = CensusTract(
+        id=str(uuid4()),
+        geoid="25001010100",
+        state_fips="25",
+        county_fips="001",
+        tract_code="010100",
+        name="Census Tract 101",
+        population=1000,
+    )
+    db = _FakeApiSession(tracts=[tract], metrics=[])
+    db.geojson_rows = [
+        (
+            tract,
+            None,
+            '{"type":"Polygon","coordinates":[[[-71,42],[-70,42],[-70,43],[-71,42]]]}',
+        )
+    ]
+    app = create_app()
+    app.dependency_overrides[get_db] = lambda: db
+    client = TestClient(app)
+
+    response = client.get("/api/tracts.geojson")
+
+    assert response.status_code == 200
+    assert response.json()["type"] == "FeatureCollection"
+    assert response.json()["features"][0]["properties"]["geoid"] == "25001010100"
+
+
 def test_scores_top_and_distribution_endpoints() -> None:
     tract_one = CensusTract(
         id="tract-one",
@@ -198,6 +227,7 @@ class _FakeApiSession:
     def __init__(self, *, tracts: list[CensusTract], metrics: list[AccessMetric]) -> None:
         self.tracts = tracts
         self.metrics = metrics
+        self.geojson_rows = []
 
     def query(self, *models):
         return _FakeApiQuery(self, models)
@@ -222,6 +252,9 @@ class _FakeApiQuery:
     def join(self, *_args):
         return self
 
+    def outerjoin(self, *_args):
+        return self
+
     def order_by(self, *_args):
         return self
 
@@ -230,6 +263,8 @@ class _FakeApiQuery:
         return self
 
     def all(self):
+        if len(self.models) == 3:
+            return self.session.geojson_rows
         if len(self.models) == 1 and self.models[0] is CensusTract:
             return self.session.tracts[: self.limit_count]
         if len(self.models) == 1 and self.models[0] is AccessMetric:

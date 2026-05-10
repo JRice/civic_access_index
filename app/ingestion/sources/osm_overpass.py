@@ -149,7 +149,14 @@ class OSMOverpassAdapter(SourceAdapter):
         for attempt in range(1, MAX_ATTEMPTS + 1):
             try:
                 async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS) as client:
-                    response = await client.post(OVERPASS_URL, data={"data": OVERPASS_QUERY})
+                    response = await client.post(
+                        OVERPASS_URL,
+                        content=OVERPASS_QUERY,
+                        headers={
+                            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                            "User-Agent": "civic-access-index/0.1 local dashboard bootstrap",
+                        },
+                    )
                     response.raise_for_status()
                     payload = response.json()
                 records = payload.get("elements", [])

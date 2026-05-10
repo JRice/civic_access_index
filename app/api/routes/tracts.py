@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.analysis.explanations import build_placeholder_explanation, build_score_explanation
@@ -53,6 +54,39 @@ def list_tracts(
     order_expr = sort_column.desc().nullslast() if sort_desc else sort_column.asc().nullslast()
     tracts = query.order_by(order_expr, CensusTract.geoid.asc()).limit(limit).all()
     return [_tract_summary(tract) for tract in tracts]
+
+
+@router.get("/tracts.geojson")
+def list_tracts_geojson(
+    state: str | None = "25",
+    county: str | None = None,
+    min_score: float | None = None,
+    max_score: float | None = None,
+    limit: int = Query(default=2000, ge=1, le=5000),
+    db: Session = DB_DEPENDENCY,
+) -> dict[str, object]:
+    query = (
+        db.query(CensusTract, AccessScore, func.ST_AsGeoJSON(CensusTract.geometry))
+        .outerjoin(AccessScore, AccessScore.census_tract_id == CensusTract.id)
+        .filter(CensusTract.geometry.is_not(None))
+    )
+    if state:
+        query = query.filter(CensusTract.state_fips == state)
+    if county:
+        query = query.filter(CensusTract.county_fips == county)
+    if min_score is not None:
+        query = query.filter(AccessScore.civic_access_index >= min_score)
+    if max_score is not None:
+        query = query.filter(AccessScore.civic_access_index <= max_score)
+    rows = query.order_by(CensusTract.geoid.asc()).limit(limit).all()
+    return {
+        "type": "FeatureCollection",
+        "features": [
+            _tract_feature(tract, score, geometry_json)
+            for tract, score, geometry_json in rows
+            if geometry_json is not None
+        ],
+    }
 
 
 @router.get("/tracts/{geoid}", response_model=TractSummary)
@@ -134,6 +168,32 @@ def _tract_summary(tract: CensusTract) -> TractSummary:
         civic_access_index=tract.score.civic_access_index if tract.score else None,
         vulnerability_score=tract.score.vulnerability_score if tract.score else None,
     )
+
+
+def _tract_feature(
+    tract: CensusTract,
+    score: AccessScore | None,
+    geometry_json: str,
+) -> dict[str, object]:
+    import json
+
+    return {
+        "type": "Feature",
+        "id": tract.geoid,
+        "geometry": json.loads(geometry_json),
+        "properties": {
+            "geoid": tract.geoid,
+            "name": tract.name,
+            "state_fips": tract.state_fips,
+            "county_fips": tract.county_fips,
+            "population": tract.population,
+            "civic_access_index": score.civic_access_index if score else None,
+            "healthcare_access_score": score.healthcare_access_score if score else None,
+            "food_access_score": score.food_access_score if score else None,
+            "transit_access_score": score.transit_access_score if score else None,
+            "vulnerability_score": score.vulnerability_score if score else None,
+        },
+    }
 
 
 def _metric_read(metric_name: str, row: AccessMetric | None) -> TractMetricRead:

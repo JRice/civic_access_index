@@ -150,7 +150,7 @@ Useful URLs:
 [x] **Milestone 4**: tract-level metrics, distance calculations, and vulnerability
   percentiles.
 [x] **Milestone 5**: Civic Access Index scoring with explanation objects and limitations.
-[ ] **Milestone 6**: map dashboard, tract side panel, and data operations page.
+[x] **Milestone 6**: map dashboard, tract side panel, and data operations page.
 [ ] **Milestone 7**: OpenSearch indexing, Terraform-managed AWS deployment, and CI/CD.
 
 ## Scoring V1
@@ -187,3 +187,12 @@ Initial endpoint groups:
 Civic Access Index is not policy advice and is not a definitive equity model. It is a
 data-integration and analysis platform that demonstrates how heterogeneous civic
 datasets can be operationalized into inspectable geospatial metrics.
+
+## Design Gaps
+
+Current implementation intentionally leaves Milestone 7 items unfinished:
+OpenSearch-backed search, Terraform/AWS deployment, cache/ETag polish, CI/CD
+hardening beyond the local GitHub Actions baseline, and production observability.
+The dashboard now renders MapLibre tract geometry, score layers, tract details,
+explanations, and ingestion status; it does not yet include deep-linked URLs or a
+full admin task trigger console.
